@@ -1,0 +1,65 @@
+<!-- hash-identificacao: bd74f12155b047dd4da9927881030695bfe92d1c68d041edbfebceb2119a275b -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastrar Plataforma</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+    <header>
+        <h1>Plataformas</h1>
+    </header>
+
+    <main>
+        <div id="mensagem" class="mensagem"></div>
+
+        <div class="form-box">
+            <h2>Cadastrar plataforma</h2>
+            <form id="form-plataforma">
+                <div class="campo">
+                    <label for="nome">Nome</label>
+                    <input type="text" id="nome" name="nome">
+                </div>
+                <div class="acoes-gerais">
+                    <button type="submit" class="btn btn-azul">Salvar</button>
+                    <a href="index.html" class="btn btn-cinza">Voltar</a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer>
+        <p>Emilly Marqueti Dias / Isabele Laranjo Souto / TADS 3B Noturno / 2026</p>
+        <p>Usou IA: SIM - Gemini (auxílio na estruturação do código)</p>
+    </footer>
+
+    <script>
+        document.getElementById('form-plataforma').addEventListener('submit', async (evt) => {
+            evt.preventDefault();
+            const nome = document.getElementById('nome').value;
+            const elMsg = document.getElementById('mensagem');
+
+            try {
+                const resp = await fetch('/api/plataformas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nome: nome })
+                });
+
+                if (!resp.ok) {
+                    elMsg.textContent = 'Erro ao salvar plataforma. Verifique se o nome foi preenchido.';
+                    elMsg.className = 'mensagem erro';
+                    return;
+                }
+
+                window.location.href = 'index.html?msg=' + encodeURIComponent('Plataforma cadastrada com sucesso!');
+            } catch (err) {
+                elMsg.textContent = 'Erro na requisição: ' + err.message;
+                elMsg.className = 'mensagem erro';
+            }
+        });
+    </script>
+</body>
+</html>

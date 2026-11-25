@@ -1,22 +1,29 @@
 package br.senac.tads.dsw.videogames.entidade;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "jogo")
+@Table(name = "tb_jogos")
 public class JogoEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	private Integer id;
 
 	@Column(nullable = false, length = 150)
 	private String titulo;
 
-	@Column(nullable = false)
+	@Column(name = "ano_lancamento", nullable = false)
 	private Integer anoLancamento;
 
-	//Relacionamento: vários jogos podem pertencer a uma mesma plataforma
+	// Relacionamento: vários jogos podem pertencer a uma plataforma
 	@ManyToOne(optional = false)
 	@JoinColumn(name = "plataforma_id", nullable = false)
 	private PlataformaEntity plataforma;
@@ -27,11 +34,14 @@ public class JogoEntity {
 	@Column(length = 500)
 	private String observacoes;
 
-	public Long getId() {
+	public JogoEntity() {
+	}
+
+	public Integer getId() {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 
