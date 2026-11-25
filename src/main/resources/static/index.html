@@ -1,0 +1,131 @@
+<!-- hash-identificacao: bd74f12155b047dd4da9927881030695bfe92d1c68d041edbfebceb2119a275b -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gerenciador de Jogos de Videogame</title>
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+<header>
+  <h1>Gerenciador de Jogos de Videogame</h1>
+</header>
+
+<main>
+  <div id="mensagem" class="mensagem"></div>
+  <div id="lista-jogos"></div>
+
+  <div class="acoes-gerais">
+    <a href="form-jogo.html" class="btn btn-azul">Incluir novo jogo</a>
+    <a href="form-plataforma.html" class="btn btn-azul">Cadastrar plataforma</a>
+  </div>
+</main>
+
+<dialog id="modal-excluir">
+  <p id="texto-confirmacao"></p>
+  <div class="acoes-gerais">
+    <button id="btn-confirmar-sim" class="btn btn-azul">SIM</button>
+    <button id="btn-confirmar-nao" class="btn btn-vermelho">NÃO</button>
+  </div>
+</dialog>
+
+<footer>
+  <p>Emilly Marqueti Dias / Isabele Laranjo Souto / TADS 3B Noturno / 2026</p>
+  <p>Usou IA: SIM - Gemini (auxílio na estruturação do código)</p>
+</footer>
+
+<script>
+  let idParaExcluir = null;
+  const modal = document.getElementById('modal-excluir');
+
+  function exibirMensagemRetorno() {
+    const params = new URLSearchParams(window.location.search);
+    const msg = params.get('msg');
+    if (msg) {
+      const elMsg = document.getElementById('mensagem');
+      elMsg.textContent = msg;
+      elMsg.className = 'mensagem sucesso';
+    }
+  }
+
+  async function carregarJogos() {
+    try {
+      const resp = await fetch('/api/jogos');
+      if (!resp.ok) {
+        throw new Error('Erro ao buscar jogos: ' + resp.status);
+      }
+      const jogos = await resp.json();
+      const container = document.getElementById('lista-jogos');
+      container.innerHTML = '';
+
+      if (jogos.length === 0) {
+        container.innerHTML = '<p>Nenhum jogo cadastrado.</p>';
+        return;
+      }
+
+      for (const jogo of jogos) {
+        const badge = !jogo.disponivel
+          ? '<span class="badge-indisponivel">INDISPONÍVEL</span>'
+          : '';
+
+        const card = `
+                        <div class="card-jogo">
+                            <div class="info-jogo">
+                                <h2>${jogo.titulo} ${badge}</h2>
+                                <p>Ano de lançamento: ${jogo.anoLancamento}</p>
+                                <p>Plataforma: ${jogo.plataformaNome}</p>
+                            </div>
+                            <div class="acoes-jogo">
+                                <a href="form-jogo.html?id=${jogo.id}" class="btn btn-azul">Alterar</a>
+                                <button type="button" class="btn btn-vermelho" onclick="abrirConfirmacao(${jogo.id})">Excluir</button>
+                            </div>
+                        </div>
+                    `;
+        container.insertAdjacentHTML('beforeend', card);
+      }
+    } catch (err) {
+      const elMsg = document.getElementById('mensagem');
+      elMsg.textContent = err.message;
+      elMsg.className = 'mensagem erro';
+    }
+  }
+
+  function abrirConfirmacao(id) {
+    idParaExcluir = id;
+    document.getElementById('texto-confirmacao').textContent = `Deseja excluir o jogo ID ${id}?`;
+    modal.showModal();
+  }
+
+  document.getElementById('btn-confirmar-nao').addEventListener('click', () => {
+    idParaExcluir = null;
+    modal.close();
+  });
+
+  document.getElementById('btn-confirmar-sim').addEventListener('click', async () => {
+    if (idParaExcluir === null) return;
+    try {
+      const resp = await fetch(`/api/jogos/${idParaExcluir}`, {
+        method: 'DELETE'
+      });
+      if (!resp.ok) {
+        throw new Error('Erro ao excluir jogo.');
+      }
+      modal.close();
+      const elMsg = document.getElementById('mensagem');
+      elMsg.textContent = 'Jogo excluído com sucesso!';
+      elMsg.className = 'mensagem sucesso';
+      await carregarJogos();
+    } catch (err) {
+      modal.close();
+      const elMsg = document.getElementById('mensagem');
+      elMsg.textContent = err.message;
+      elMsg.className = 'mensagem erro';
+    }
+  });
+
+  exibirMensagemRetorno();
+  carregarJogos();
+</script>
+</body>
+</html>
