@@ -1,30 +1,44 @@
 package br.senac.tads.dsw.videogames;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import br.senac.tads.dsw.videogames.entidade.PlataformaEntity;
 import br.senac.tads.dsw.videogames.repositorio.PlataformaRepository;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class PlataformaService {
 
-	private final PlataformaRepository repository;
+	private final PlataformaRepository plataformaRepository;
 
-	public PlataformaService(PlataformaRepository repository) {
-		this.repository = repository;
+	public PlataformaService(PlataformaRepository plataformaRepository) {
+		this.plataformaRepository = plataformaRepository;
 	}
 
+	private PlataformaDto toDto(PlataformaEntity entity) {
+		PlataformaDto dto = new PlataformaDto();
+		dto.setId(entity.getId());
+		dto.setNome(entity.getNome());
+		return dto;
+	}
+
+	@Transactional(readOnly = true)
 	public List<PlataformaDto> listarTodas() {
-		return repository.findAll().stream()
-			.map(p -> new PlataformaDto(p.getId(), p.getNome()))
-			.toList();
+		List<PlataformaDto> resultado = new ArrayList<>();
+		for (PlataformaEntity entity : plataformaRepository.findAll()) {
+			resultado.add(toDto(entity));
+		}
+		return resultado;
 	}
 
+	@Transactional
 	public PlataformaDto incluir(PlataformaDto dto) {
 		PlataformaEntity entity = new PlataformaEntity();
-		entity.setNome(dto.nome().trim());
-		PlataformaEntity salvo = repository.save(entity);
-		return new PlataformaDto(salvo.getId(), salvo.getNome());
+		entity.setNome(dto.getNome().trim());
+		PlataformaEntity salva = plataformaRepository.save(entity);
+		return toDto(salva);
 	}
 }

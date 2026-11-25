@@ -1,24 +1,36 @@
 package br.senac.tads.dsw.videogames.entidade;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
-// Tabela separada para as plataformas
 @Entity
-@Table(name = "plataforma")
+@Table(name = "tb_plataformas")
 public class PlataformaEntity {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private Long id;
+	private Integer id;
 
-	@Column(nullable = false, length = 100)
+	@Column(nullable = false, unique = true, length = 100)
 	private String nome;
 
-	public Long getId() {
+	public PlataformaEntity() {
+	}
+
+	public PlataformaEntity(Integer id, String nome) {
+		this.id = id;
+		this.nome = nome;
+	}
+
+	public Integer getId() {
 		return id;
 	}
 
-	public void setId(Long id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 

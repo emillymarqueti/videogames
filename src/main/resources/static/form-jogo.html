@@ -1,0 +1,144 @@
+<!-- hash-identificacao: bd74f12155b047dd4da9927881030695bfe92d1c68d041edbfebceb2119a275b -->
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cadastro de Jogo</title>
+    <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+    <header>
+        <h1>Gerenciador de Jogos de Videogame</h1>
+    </header>
+
+    <main>
+        <div id="mensagem" class="mensagem"></div>
+
+        <div class="form-box">
+            <h2 id="titulo-form">Incluir novo jogo</h2>
+            <form id="form-jogo">
+                <div class="campo">
+                    <label for="titulo">Título</label>
+                    <input type="text" id="titulo" name="titulo">
+                </div>
+
+                <div class="campo">
+                    <label for="anoLancamento">Ano de lançamento</label>
+                    <input type="number" id="anoLancamento" name="anoLancamento">
+                </div>
+
+                <div class="campo">
+                    <label for="plataformaId">Plataforma</label>
+                    <select id="plataformaId" name="plataformaId">
+                        <option value="">Selecione</option>
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <label>Disponível</label>
+                    <div class="radio-grupo">
+                        <label><input type="radio" name="disponivel" value="true" checked> Sim</label>
+                        <label><input type="radio" name="disponivel" value="false"> Não</label>
+                    </div>
+                </div>
+
+                <div class="campo">
+                    <label for="observacoes">Observações</label>
+                    <textarea id="observacoes" name="observacoes" rows="4"></textarea>
+                </div>
+
+                <div class="acoes-gerais">
+                    <button type="submit" class="btn btn-azul">Salvar</button>
+                    <a href="index.html" class="btn btn-cinza">Voltar</a>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <footer>
+        <p>Emilly Marqueti Dias / Isabele Laranjo Souto / TADS 3B Noturno / 2026</p>
+        <p>Usou IA: SIM - Gemini (auxílio na estruturação do código)</p>
+    </footer>
+
+    <script>
+        const params = new URLSearchParams(window.location.search);
+        const jogoId = params.get('id');
+
+        async function carregarPlataformas() {
+            const resp = await fetch('/api/plataformas');
+            const plataformas = await resp.json();
+            const select = document.getElementById('plataformaId');
+            for (const p of plataformas) {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.nome;
+                select.appendChild(opt);
+            }
+        }
+
+        async function carregarJogo() {
+            if (!jogoId) return;
+            document.getElementById('titulo-form').textContent = `Alterar jogo - ID ${jogoId}`;
+
+            const resp = await fetch(`/api/jogos/${jogoId}`);
+            if (!resp.ok) return;
+            const jogo = await resp.json();
+
+            document.getElementById('titulo').value = jogo.titulo;
+            document.getElementById('anoLancamento').value = jogo.anoLancamento;
+            document.getElementById('plataformaId').value = jogo.plataformaId;
+            document.getElementById('observacoes').value = jogo.observacoes || '';
+
+            const radio = document.querySelector(`input[name="disponivel"][value="${jogo.disponivel}"]`);
+            if (radio) radio.checked = true;
+        }
+
+        document.getElementById('form-jogo').addEventListener('submit', async (evt) => {
+            evt.preventDefault();
+            const elMsg = document.getElementById('mensagem');
+
+            const anoVal = document.getElementById('anoLancamento').value;
+            const platVal = document.getElementById('plataformaId').value;
+            const dispVal = document.querySelector('input[name="disponivel"]:checked').value;
+
+            const dados = {
+                titulo: document.getElementById('titulo').value,
+                anoLancamento: anoVal ? Number(anoVal) : null,
+                plataformaId: platVal ? Number(platVal) : null,
+                disponivel: dispVal === 'true',
+                observacoes: document.getElementById('observacoes').value
+            };
+
+            const url = jogoId ? `/api/jogos/${jogoId}` : '/api/jogos';
+            const metodo = jogoId ? 'PUT' : 'POST';
+
+            try {
+                const resp = await fetch(url, {
+                    method: metodo,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(dados)
+                });
+
+                if (!resp.ok) {
+                    elMsg.textContent = 'Erro ao salvar jogo. Verifique os campos obrigatórios (título, ano >= 1950 e plataforma).';
+                    elMsg.className = 'mensagem erro';
+                    return;
+                }
+
+                window.location.href = 'index.html?msg=' + encodeURIComponent('Jogo salvo com sucesso!');
+            } catch (err) {
+                elMsg.textContent = 'Erro na requisição: ' + err.message;
+                elMsg.className = 'mensagem erro';
+            }
+        });
+
+        async function iniciar() {
+            await carregarPlataformas();
+            await carregarJogo();
+        }
+
+        iniciar();
+    </script>
+</body>
+</html>

@@ -1,12 +1,16 @@
 package br.senac.tads.dsw.videogames;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import br.senac.tads.dsw.videogames.entidade.JogoEntity;
 import br.senac.tads.dsw.videogames.entidade.PlataformaEntity;
 import br.senac.tads.dsw.videogames.repositorio.JogoRepository;
 import br.senac.tads.dsw.videogames.repositorio.PlataformaRepository;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
 
 @Service
 public class JogoService {
@@ -19,64 +23,82 @@ public class JogoService {
 		this.plataformaRepository = plataformaRepository;
 	}
 
+	private JogoDto toDto(JogoEntity entity) {
+		JogoDto dto = new JogoDto();
+		dto.setId(entity.getId());
+		dto.setTitulo(entity.getTitulo());
+		dto.setAnoLancamento(entity.getAnoLancamento());
+		dto.setPlataformaId(entity.getPlataforma().getId());
+		dto.setPlataformaNome(entity.getPlataforma().getNome());
+		dto.setDisponivel(entity.getDisponivel());
+		dto.setObservacoes(entity.getObservacoes());
+		return dto;
+	}
+
+	@Transactional(readOnly = true)
 	public List<JogoDto> listarTodos() {
-		return jogoRepository.findAll().stream()
-			.map(this::toDto)
-			.toList();
+		List<JogoDto> resultado = new ArrayList<>();
+		for (JogoEntity entity : jogoRepository.findAll()) {
+			resultado.add(toDto(entity));
+		}
+		return resultado;
 	}
 
-	public JogoDto buscarPorId(Long id) {
-		JogoEntity entity = jogoRepository.findById(id)
-			.orElseThrow(() -> new NaoEncontradoException("Jogo não encontrado: " + id));
-		return toDto(entity);
+	@Transactional(readOnly = true)
+	public Optional<JogoDto> buscarPorId(Integer id) {
+		Optional<JogoEntity> optEntity = jogoRepository.findById(id);
+		if (optEntity.isEmpty()) {
+			return Optional.empty();
+		}
+		return Optional.of(toDto(optEntity.get()));
 	}
 
+	@Transactional
 	public JogoDto incluir(JogoDto dto) {
-		PlataformaEntity plataforma = plataformaRepository.findById(dto.plataformaId())
-			.orElseThrow(() -> new NaoEncontradoException("Plataforma não encontrada: " + dto.plataformaId()));
+		Optional<PlataformaEntity> optPlat = plataformaRepository.findById(dto.getPlataformaId());
+		if (optPlat.isEmpty()) {
+			throw new NaoEncontradoException("Plataforma não encontrada: " + dto.getPlataformaId());
+		}
 
 		JogoEntity entity = new JogoEntity();
-		entity.setTitulo(dto.titulo().trim());
-		entity.setAnoLancamento(dto.anoLancamento());
-		entity.setPlataforma(plataforma);
-		entity.setDisponivel(dto.disponivel());
-		entity.setObservacoes(dto.observacoes());
+		entity.setTitulo(dto.getTitulo().trim());
+		entity.setAnoLancamento(dto.getAnoLancamento());
+		entity.setPlataforma(optPlat.get());
+		entity.setDisponivel(dto.getDisponivel());
+		entity.setObservacoes(dto.getObservacoes());
 
-		return toDto(jogoRepository.save(entity));
+		JogoEntity salvo = jogoRepository.save(entity);
+		return toDto(salvo);
 	}
 
-	public JogoDto alterar(Long id, JogoDto dto) {
-		JogoEntity entity = jogoRepository.findById(id)
-			.orElseThrow(() -> new NaoEncontradoException("Jogo não encontrado: " + id));
+	@Transactional
+	public JogoDto alterar(Integer id, JogoDto dto) {
+		Optional<JogoEntity> optEntity = jogoRepository.findById(id);
+		if (optEntity.isEmpty()) {
+			throw new NaoEncontradoException("Jogo não encontrado: " + id);
+		}
 
-		PlataformaEntity plataforma = plataformaRepository.findById(dto.plataformaId())
-			.orElseThrow(() -> new NaoEncontradoException("Plataforma não encontrada: " + dto.plataformaId()));
+		Optional<PlataformaEntity> optPlat = plataformaRepository.findById(dto.getPlataformaId());
+		if (optPlat.isEmpty()) {
+			throw new NaoEncontradoException("Plataforma não encontrada: " + dto.getPlataformaId());
+		}
 
-		entity.setTitulo(dto.titulo().trim());
-		entity.setAnoLancamento(dto.anoLancamento());
-		entity.setPlataforma(plataforma);
-		entity.setDisponivel(dto.disponivel());
-		entity.setObservacoes(dto.observacoes());
+		JogoEntity entity = optEntity.get();
+		entity.setTitulo(dto.getTitulo().trim());
+		entity.setAnoLancamento(dto.getAnoLancamento());
+		entity.setPlataforma(optPlat.get());
+		entity.setDisponivel(dto.getDisponivel());
+		entity.setObservacoes(dto.getObservacoes());
 
-		return toDto(jogoRepository.save(entity));
+		JogoEntity salvo = jogoRepository.save(entity);
+		return toDto(salvo);
 	}
 
-	public void excluir(Long id) {
+	@Transactional
+	public void excluir(Integer id) {
 		if (!jogoRepository.existsById(id)) {
 			throw new NaoEncontradoException("Jogo não encontrado: " + id);
 		}
 		jogoRepository.deleteById(id);
-	}
-
-	private JogoDto toDto(JogoEntity entity) {
-		return new JogoDto(
-			entity.getId(),
-			entity.getTitulo(),
-			entity.getAnoLancamento(),
-			entity.getPlataforma().getId(),
-			entity.getPlataforma().getNome(),
-			entity.getDisponivel(),
-			entity.getObservacoes()
-		);
 	}
 }
